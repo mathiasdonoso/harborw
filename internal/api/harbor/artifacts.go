@@ -100,7 +100,7 @@ func (h harborApiClient) FetchArtifacts(project string, repository string) (*[]A
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s/%s", h.username, h.password))
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", h.credentials))
 	req.Header.Set("User-Agent", "harborw/1.0")
 
 	q := req.URL.Query()

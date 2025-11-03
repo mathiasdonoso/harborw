@@ -232,7 +232,7 @@ func (m model) artifactsUpdate(msg tea.Msg) (model, tea.Cmd) {
 func (m model) NewArtifactsState(project string, repository string) ArtifactsState {
 	columns := []table.Column{
 		{Title: "Select", Width: 6},
-		{Title: "Repository", Width: 25},
+		{Title: "Tag", Width: 25},
 		{Title: "sha256", Width: 15},
 		{Title: "Labels", Width: 20},
 		{Title: "Size (MiB)", Width: 10},

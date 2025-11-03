@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -12,28 +13,23 @@ import (
 )
 
 type Project struct {
-	// Selected bool
-	Columns []string
+	Name      string
+	RepoCount int
+}
+
+func (p Project) ToColumn() []string {
+	columns := []string{p.Name, strconv.Itoa(p.RepoCount)}
+	return columns
 }
 
 type ProjectsState struct {
 	table  table.Model
 	data   []Project
 	status string
-	filter string
 }
 
-var projectsLoaded = false
-
 func (m model) projectsView() string {
-	var s string
-
-	if m.state.projects.status == "filtering" {
-		s += fmt.Sprintf("Filter: %s\n", m.state.projects.filter)
-	}
-
-	s += m.state.projects.table.View()
-	return s
+	return m.state.projects.table.View()
 }
 
 func (m model) projectsUpdate(msg tea.Msg) (model, tea.Cmd) {
@@ -41,14 +37,11 @@ func (m model) projectsUpdate(msg tea.Msg) (model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "/":
-			fmt.Printf("Press /\n")
-			m.state.projects.status = "filtering"
-			m.state.projects.filter = ""
-			return m, nil
 		case "enter":
-			fmt.Printf("Press enter\n")
-			m.state.repositories.table = m.NewRepositoriesState("onboarding")
+			rowIndex := m.state.projects.table.Cursor()
+			active := m.state.projects.data[rowIndex]
+			m.state.repositories = m.NewRepositoriesState(active.Name)
+			slog.Debug(fmt.Sprintf("Selecting project: %s", active.Name))
 			m = m.SwitchPage(repositoriesPage)
 			return m, nil
 		default:
@@ -61,7 +54,7 @@ func (m model) projectsUpdate(msg tea.Msg) (model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) NewProjectsState() table.Model {
+func (m model) NewProjectsState() ProjectsState {
 	const PROJECT_COLUMN_NAME = "Project"
 	const REPOSITORIES_COUNT_COLUMN_NAME = "Repositores count"
 
@@ -78,19 +71,19 @@ func (m model) NewProjectsState() table.Model {
 	if err != nil {
 		fmt.Printf("Error fetching projects: %v\n", err)
 	}
-	projectsLoaded = true
 
 	projects := make([]Project, len(*r))
-
 	for i, p := range *r {
-		projects[i] = Project{
-			Columns: []string{p.Name, strconv.Itoa(p.RepoCount)},
+		project := Project{
+			Name:      p.Name,
+			RepoCount: p.RepoCount,
 		}
+		projects[i] = project
 	}
 
 	rows := make([]table.Row, len(*r))
 	for i, a := range projects {
-		rows[i] = a.Columns
+		rows[i] = a.ToColumn()
 	}
 
 	t := table.New(
@@ -102,5 +95,13 @@ func (m model) NewProjectsState() table.Model {
 
 	t.SetStyles(GetTableDefaultStyles())
 
-	return t
+	state := ProjectsState{
+		table:  t,
+		data:   projects,
+		status: "",
+	}
+
+	slog.Debug("New Project state created.")
+
+	return state
 }

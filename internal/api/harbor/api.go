@@ -24,7 +24,7 @@ func NewHarborApiClient(client *http.Client) (harborApiClient, error) {
 		return harborApiClient{}, fmt.Errorf("credentials cannot be empty")
 	}
 
-	credentials := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password)))
+	credentials := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "%s:%s", username, password))
 
 	slog.Debug(fmt.Sprintf("New harbor api client created for %s", baseUrl))
 

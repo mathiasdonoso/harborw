@@ -18,8 +18,8 @@ type RepositoriesResult struct {
 }
 
 func (h harborApiClient) FetchRepositories(project string) (*[]RepositoriesResult, error) {
-	slog.Debug(fmt.Sprintf("Fetching repositories from project %s", project))
 	url := fmt.Sprintf("%s/api/v2.0/projects/%s/repositories", h.baseUrl, project)
+	slog.Debug(fmt.Sprintf("Fetching repositories. URL: %s", url))
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)

@@ -92,7 +92,7 @@ func NewModel() (tea.Model, error) {
 		},
 	}
 
-	m.state.projects.table = m.NewProjectsState()
+	m.state.projects = m.NewProjectsState()
 
 	return m, nil
 }

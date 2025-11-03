@@ -2,19 +2,31 @@ package tui
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mathiasdonoso/harborw/internal/api/harbor"
 )
 
-type RepositoriesState struct {
-	table table.Model
+type Repository struct {
+	Name           string
+	Project        string
+	ArtifactsCount int
 }
 
-var repositoriesLoaded = false
+func (r Repository) ToColumn() []string {
+	columns := []string{r.Name, strconv.Itoa(r.ArtifactsCount)}
+	return columns
+}
+
+type RepositoriesState struct {
+	table table.Model
+	data  []Repository
+}
 
 func (m model) repositoriesView() string {
 	return m.state.repositories.table.View()
@@ -29,8 +41,9 @@ func (m model) repositoriesUpdate(msg tea.Msg) (model, tea.Cmd) {
 			m = m.SwitchPage(projectsPage)
 			return m, nil
 		case "enter":
-			fmt.Printf("Press enter\n")
-			m.state.artifacts = m.NewArtifactsState("onboarding", "ng-ui-mx")
+			rowIndex := m.state.repositories.table.Cursor()
+			active := m.state.repositories.data[rowIndex]
+			m.state.artifacts = m.NewArtifactsState(active.Project, active.Name)
 			m = m.SwitchPage(artifactsPage)
 			return m, nil
 		}
@@ -39,7 +52,7 @@ func (m model) repositoriesUpdate(msg tea.Msg) (model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) NewRepositoriesState(project string) table.Model {
+func (m model) NewRepositoriesState(project string) RepositoriesState {
 	const REPOSITORY_COLUMN_NAME = "Repository"
 	const ARTIFACTS_COUNT_COLUMN_NAME = "Artifacts count"
 
@@ -57,11 +70,26 @@ func (m model) NewRepositoriesState(project string) table.Model {
 	if err != nil {
 		fmt.Printf("Error fetching projects: %v\n", err)
 	}
-	repositoriesLoaded = true
 
-	rows := []table.Row{}
-	for _, v := range *r {
-		rows = append(rows, table.Row{v.Name, strconv.Itoa(v.ArtifactCount)})
+	repositories := make([]Repository, len(*r))
+	for i, r := range *r {
+		nameSections := strings.Split(r.Name, "/")
+		if len(nameSections) == 0 {
+			// IDK what to do in this scenario
+			continue
+		}
+
+		repository := Repository{
+			Name:           nameSections[len(nameSections)-1],
+			ArtifactsCount: r.ArtifactCount,
+			Project:        project,
+		}
+		repositories[i] = repository
+	}
+
+	rows := make([]table.Row, len(*r))
+	for i, r := range repositories {
+		rows[i] = r.ToColumn()
 	}
 
 	t := table.New(
@@ -73,5 +101,12 @@ func (m model) NewRepositoriesState(project string) table.Model {
 
 	t.SetStyles(GetTableDefaultStyles())
 
-	return t
+	state := RepositoriesState{
+		table: t,
+		data:  repositories,
+	}
+
+	slog.Debug("New Repository state created.")
+
+	return state
 }

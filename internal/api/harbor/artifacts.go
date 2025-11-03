@@ -91,8 +91,8 @@ type ArtifactsResult struct {
 }
 
 func (h harborApiClient) FetchArtifacts(project string, repository string) (*[]ArtifactsResult, error) {
-	slog.Debug(fmt.Sprintf("Fetching artifacts from project: %s and repository: %s", project, repository))
 	url := fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts", h.baseUrl, project, repository)
+	slog.Debug(fmt.Sprintf("Fetching artifacts. URL: %s", url))
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -138,7 +138,7 @@ func (h harborApiClient) DeleteArtifact(project string, repository string, artif
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s/%s", h.username, h.password))
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", h.credentials))
 	req.Header.Set("User-Agent", "harborw/1.0")
 
 	resp, err := h.client.Do(req)

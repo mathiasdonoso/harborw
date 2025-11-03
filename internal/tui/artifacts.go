@@ -101,15 +101,18 @@ func ImageIsInUse(hash string) (bool, error) {
 }
 
 type ArtifactDeleteMsg struct {
-	err error
+	artifact Artifact
+	err      error
 }
 
+// TODO: Add description code bc of lsp
 func deleteArtifact(artifact Artifact) tea.Cmd {
 	var err error
 	harborClient, err := harbor.NewHarborApiClient(http.DefaultClient)
 	if err != nil {
 		return func() tea.Msg {
 			return ArtifactDeleteMsg{
+				artifact,
 				err,
 			}
 		}
@@ -118,6 +121,7 @@ func deleteArtifact(artifact Artifact) tea.Cmd {
 	err = harborClient.DeleteArtifact(artifact.Project, artifact.Repository, artifact.Hash)
 	return func() tea.Msg {
 		return ArtifactDeleteMsg{
+			artifact,
 			err,
 		}
 	}
@@ -166,7 +170,12 @@ func (m model) artifactsUpdate(msg tea.Msg) (model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case ArtifactDeleteMsg:
-		fmt.Printf("DELETED")
+		if msg.err != nil {
+			fmt.Printf("error: %s\n", msg.err.Error())
+			return m, nil
+		}
+
+		fmt.Printf(fmt.Sprintf("Deleted artifact with hash: %s\n", msg.artifact.Hash))
 	case processDeleteArtifactMsg:
 		if msg.canDelete {
 			fmt.Println("processDoneMsg!!!")
@@ -236,32 +245,29 @@ func (m model) NewArtifactsState(project string, repository string) ArtifactsSta
 		fmt.Printf("Error creating harbor client: %v\n", err)
 	}
 
-	r, err := harborClient.FetchArtifacts(project, repository)
+	a, err := harborClient.FetchArtifacts(project, repository)
 	if err != nil {
 		fmt.Printf("Error fetching projects: %v\n", err)
 	}
-	repositoriesLoaded = true
 
-	artifacts := make([]Artifact, len(*r))
-
-	for i, a := range *r {
-		tag := a.Tags[0]
-		// size := float64(a.Size) / 1024 / 1024
+	artifacts := make([]Artifact, len(*a))
+	for i, ar := range *a {
+		tag := ar.Tags[0]
 		artifact := Artifact{
 			Selected:   false,
 			Name:       tag.Name,
-			Hash:       a.Digest,
-			Size:       float64(a.Size),
-			PullTime:   a.PullTime,
-			PushTime:   a.PushTime,
 			Project:    project,
 			Repository: repository,
+			Hash:       ar.Digest,
+			Size:       float64(ar.Size),
+			PullTime:   ar.PullTime,
+			PushTime:   ar.PushTime,
 		}
 
 		artifacts[i] = artifact
 	}
 
-	rows := make([]table.Row, len(*r))
+	rows := make([]table.Row, len(*a))
 	for i, a := range artifacts {
 		rows[i] = a.ToColumn()
 	}
@@ -279,6 +285,8 @@ func (m model) NewArtifactsState(project string, repository string) ArtifactsSta
 		table: t,
 		data:  artifacts,
 	}
+
+	slog.Debug("New Artifact state created.")
 
 	return state
 }

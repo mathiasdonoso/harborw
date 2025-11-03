@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -79,8 +80,10 @@ func (m model) NewRepositoriesState(project string) RepositoriesState {
 			continue
 		}
 
+		name := strings.Join(nameSections[1:], "/")
+		escapedName := url.PathEscape(url.PathEscape(name))
 		repository := Repository{
-			Name:           nameSections[len(nameSections)-1],
+			Name:           escapedName,
 			ArtifactsCount: r.ArtifactCount,
 			Project:        project,
 		}

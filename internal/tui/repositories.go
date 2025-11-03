@@ -20,7 +20,12 @@ type Repository struct {
 }
 
 func (r Repository) ToColumn() []string {
-	columns := []string{r.Name, strconv.Itoa(r.ArtifactsCount)}
+	decodedOnce, _ := url.PathUnescape(r.Name)
+	decodedTwice, _ := url.PathUnescape(decodedOnce)
+	columns := []string{
+		decodedTwice,
+		strconv.Itoa(r.ArtifactsCount),
+	}
 	return columns
 }
 
@@ -81,6 +86,7 @@ func (m model) NewRepositoriesState(project string) RepositoriesState {
 		}
 
 		name := strings.Join(nameSections[1:], "/")
+		// Double encoding needed
 		escapedName := url.PathEscape(url.PathEscape(name))
 		repository := Repository{
 			Name:           escapedName,

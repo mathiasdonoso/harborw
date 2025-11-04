@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -19,7 +18,7 @@ type Repository struct {
 	ArtifactsCount int
 }
 
-func (r Repository) ToColumn() []string {
+func (r Repository) ToRow() []string {
 	decodedOnce, _ := url.PathUnescape(r.Name)
 	decodedTwice, _ := url.PathUnescape(decodedOnce)
 	columns := []string{
@@ -58,28 +57,45 @@ func (m model) repositoriesUpdate(msg tea.Msg) (model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) NewRepositoriesState(project string) RepositoriesState {
-	const REPOSITORY_COLUMN_NAME = "Repository"
-	const ARTIFACTS_COUNT_COLUMN_NAME = "Artifacts count"
-
+func NewEmptyRepositoriesState() RepositoriesState {
 	columns := []table.Column{
-		{Title: REPOSITORY_COLUMN_NAME, Width: 40},
-		{Title: ARTIFACTS_COUNT_COLUMN_NAME, Width: len(ARTIFACTS_COUNT_COLUMN_NAME)},
+		{Title: "Repository", Width: 40},
+		{Title: "Artifacts count", Width: 15},
 	}
 
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows([]table.Row{{"No data available", ""}}),
+		table.WithFocused(true),
+		table.WithHeight(2),
+	)
+
+	t.SetStyles(GetTableDefaultStyles())
+
+	state := RepositoriesState{
+		table: t,
+		data:  []Repository{},
+	}
+
+	return state
+}
+
+func (m model) NewRepositoriesState(project string) RepositoriesState {
 	harborClient, err := harbor.NewHarborApiClient(http.DefaultClient)
 	if err != nil {
-		fmt.Printf("Error creating harbor client: %v\n", err)
+		slog.Error("Error creating harbor client", "err", err)
+		return NewEmptyRepositoriesState()
 	}
 
 	r, err := harborClient.FetchRepositories(project)
 	if err != nil {
-		fmt.Printf("Error fetching projects: %v\n", err)
+		slog.Error("Error fetching projects", "err", err)
+		return NewEmptyRepositoriesState()
 	}
 
 	repositories := make([]Repository, len(*r))
-	for i, r := range *r {
-		nameSections := strings.Split(r.Name, "/")
+	for i, repo := range *r {
+		nameSections := strings.Split(repo.Name, "/")
 		if len(nameSections) == 0 {
 			// IDK what to do in this scenario
 			continue
@@ -90,7 +106,7 @@ func (m model) NewRepositoriesState(project string) RepositoriesState {
 		escapedName := url.PathEscape(url.PathEscape(name))
 		repository := Repository{
 			Name:           escapedName,
-			ArtifactsCount: r.ArtifactCount,
+			ArtifactsCount: repo.ArtifactCount,
 			Project:        project,
 		}
 		repositories[i] = repository
@@ -98,7 +114,12 @@ func (m model) NewRepositoriesState(project string) RepositoriesState {
 
 	rows := make([]table.Row, len(*r))
 	for i, r := range repositories {
-		rows[i] = r.ToColumn()
+		rows[i] = r.ToRow()
+	}
+
+	columns := []table.Column{
+		{Title: "Repository", Width: 40},
+		{Title: "Artifacts count", Width: 15},
 	}
 
 	t := table.New(

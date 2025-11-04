@@ -50,17 +50,17 @@ func (m model) projectsUpdate(msg tea.Msg) (model, tea.Cmd) {
 	return m, cmd
 }
 
-func NewEmptyProjectsState() ProjectsState {
-	columns := []table.Column{
-		{Title: "Project", Width: 40},
-		{Title: "Repositories count", Width: 18},
-	}
+var PROJECTS_COLUMNS = []table.Column{
+	{Title: "Project", Width: 40},
+	{Title: "Repositories count", Width: 18},
+}
 
+func NewEmptyProjectsState() ProjectsState {
 	t := table.New(
-		table.WithColumns(columns),
+		table.WithColumns(PROJECTS_COLUMNS),
 		table.WithRows([]table.Row{{"No data available", ""}}),
 		table.WithFocused(true),
-		table.WithHeight(21),
+		table.WithHeight(2),
 	)
 
 	t.SetStyles(GetTableDefaultStyles())
@@ -99,13 +99,8 @@ func (m model) NewProjectsState() ProjectsState {
 		rows[i] = a.ToRow()
 	}
 
-	columns := []table.Column{
-		{Title: "Project", Width: 40},
-		{Title: "Repositories count", Width: 18},
-	}
-
 	t := table.New(
-		table.WithColumns(columns),
+		table.WithColumns(PROJECTS_COLUMNS),
 		table.WithRows(rows),
 		table.WithFocused(true),
 		table.WithHeight(21),

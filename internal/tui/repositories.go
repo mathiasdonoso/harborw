@@ -57,14 +57,14 @@ func (m model) repositoriesUpdate(msg tea.Msg) (model, tea.Cmd) {
 	return m, cmd
 }
 
-func NewEmptyRepositoriesState() RepositoriesState {
-	columns := []table.Column{
-		{Title: "Repository", Width: 40},
-		{Title: "Artifacts count", Width: 15},
-	}
+var REPOSITORIES_COLUMNS = []table.Column{
+	{Title: "Repository", Width: 40},
+	{Title: "Artifacts count", Width: 15},
+}
 
+func NewEmptyRepositoriesState() RepositoriesState {
 	t := table.New(
-		table.WithColumns(columns),
+		table.WithColumns(REPOSITORIES_COLUMNS),
 		table.WithRows([]table.Row{{"No data available", ""}}),
 		table.WithFocused(true),
 		table.WithHeight(2),
@@ -117,13 +117,8 @@ func (m model) NewRepositoriesState(project string) RepositoriesState {
 		rows[i] = r.ToRow()
 	}
 
-	columns := []table.Column{
-		{Title: "Repository", Width: 40},
-		{Title: "Artifacts count", Width: 15},
-	}
-
 	t := table.New(
-		table.WithColumns(columns),
+		table.WithColumns(REPOSITORIES_COLUMNS),
 		table.WithRows(rows),
 		table.WithFocused(true),
 		table.WithHeight(21),

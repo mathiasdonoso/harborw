@@ -266,7 +266,7 @@ func (m model) NewArtifactsState(project string, repository string) ArtifactsSta
 
 	a, err := harborClient.FetchArtifacts(project, repository)
 	if err != nil {
-		slog.Error("Error fetching projects", "err", err)
+		slog.Error("Error fetching artifacts", "err", err)
 		return newEmptyArtifactsState()
 	}
 

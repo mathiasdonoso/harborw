@@ -89,7 +89,7 @@ func (m model) NewRepositoriesState(project string) RepositoriesState {
 
 	r, err := harborClient.FetchRepositories(project)
 	if err != nil {
-		slog.Error("Error fetching projects", "err", err)
+		slog.Error("Error fetching repositories", "err", err)
 		return newEmptyRepositoriesState()
 	}
 

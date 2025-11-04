@@ -23,7 +23,7 @@ type Artifact struct {
 	PushTime   string
 }
 
-func (a Artifact) ToColumn() []string {
+func (a Artifact) ToRow() []string {
 	checked := "[ ]"
 
 	if a.Selected {
@@ -190,7 +190,7 @@ func (m model) artifactsUpdate(msg tea.Msg) (model, tea.Cmd) {
 
 			for i := range m.state.artifacts.data {
 				m.state.artifacts.data[i].Selected = false
-				rows[i] = m.state.artifacts.data[i].ToColumn()
+				rows[i] = m.state.artifacts.data[i].ToRow()
 			}
 
 			m.state.artifacts.table.SetRows(rows)
@@ -217,7 +217,7 @@ func (m model) artifactsUpdate(msg tea.Msg) (model, tea.Cmd) {
 
 			rows := make([]table.Row, len(m.state.artifacts.data))
 			for i, a := range m.state.artifacts.data {
-				rows[i] = a.ToColumn()
+				rows[i] = a.ToRow()
 			}
 
 			m.state.artifacts.table.SetRows(rows)
@@ -229,25 +229,45 @@ func (m model) artifactsUpdate(msg tea.Msg) (model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) NewArtifactsState(project string, repository string) ArtifactsState {
-	columns := []table.Column{
-		{Title: "Select", Width: 6},
-		{Title: "Tag", Width: 25},
-		{Title: "sha256", Width: 15},
-		{Title: "Labels", Width: 20},
-		{Title: "Size (MiB)", Width: 10},
-		{Title: "Pull time", Width: 25},
-		{Title: "Push time", Width: 25},
+var ARTIFACTS_COLUMNS = []table.Column{
+	{Title: "Select", Width: 6},
+	{Title: "Tag", Width: 25},
+	{Title: "sha256", Width: 15},
+	{Title: "Labels", Width: 20},
+	{Title: "Size (MiB)", Width: 10},
+	{Title: "Pull time", Width: 25},
+	{Title: "Push time", Width: 25},
+}
+
+func NewEmptyArtifactsState() ArtifactsState {
+	t := table.New(
+		table.WithColumns(ARTIFACTS_COLUMNS),
+		table.WithRows([]table.Row{{"", "No data available", "", "", "", "", ""}}),
+		table.WithFocused(true),
+		table.WithHeight(2),
+	)
+
+	t.SetStyles(GetTableDefaultStyles())
+
+	state := ArtifactsState{
+		table: t,
+		data:  []Artifact{},
 	}
 
+	return state
+}
+
+func (m model) NewArtifactsState(project string, repository string) ArtifactsState {
 	harborClient, err := harbor.NewHarborApiClient(http.DefaultClient)
 	if err != nil {
-		fmt.Printf("Error creating harbor client: %v\n", err)
+		slog.Error("Error creating harbor client", "err", err)
+		return NewEmptyArtifactsState()
 	}
 
 	a, err := harborClient.FetchArtifacts(project, repository)
 	if err != nil {
-		fmt.Printf("Error fetching projects: %v\n", err)
+		slog.Error("Error fetching projects", "err", err)
+		return NewEmptyArtifactsState()
 	}
 
 	artifacts := make([]Artifact, len(*a))
@@ -269,11 +289,11 @@ func (m model) NewArtifactsState(project string, repository string) ArtifactsSta
 
 	rows := make([]table.Row, len(*a))
 	for i, a := range artifacts {
-		rows[i] = a.ToColumn()
+		rows[i] = a.ToRow()
 	}
 
 	t := table.New(
-		table.WithColumns(columns),
+		table.WithColumns(ARTIFACTS_COLUMNS),
 		table.WithRows(rows),
 		table.WithFocused(true),
 		table.WithHeight(41),

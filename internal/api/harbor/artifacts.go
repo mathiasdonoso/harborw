@@ -129,8 +129,8 @@ func (h harborApiClient) FetchArtifacts(project string, repository string) (*[]A
 }
 
 func (h harborApiClient) DeleteArtifact(project string, repository string, artifactHashOrTag string) error {
-	slog.Debug(fmt.Sprintf("Deleting artifact with hash: %s", artifactHashOrTag[:10]))
 	url := fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts/%s", h.baseUrl, project, repository, artifactHashOrTag)
+	slog.Debug(fmt.Sprintf("Deleting artifact. URL: %s", url))
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)

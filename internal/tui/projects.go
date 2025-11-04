@@ -17,15 +17,14 @@ type Project struct {
 	RepoCount int
 }
 
-func (p Project) ToColumn() []string {
+func (p Project) ToRow() []string {
 	columns := []string{p.Name, strconv.Itoa(p.RepoCount)}
 	return columns
 }
 
 type ProjectsState struct {
-	table  table.Model
-	data   []Project
-	status string
+	table table.Model
+	data  []Project
 }
 
 func (m model) projectsView() string {
@@ -44,9 +43,6 @@ func (m model) projectsUpdate(msg tea.Msg) (model, tea.Cmd) {
 			slog.Debug(fmt.Sprintf("Selecting project: %s", active.Name))
 			m = m.SwitchPage(repositoriesPage)
 			return m, nil
-		default:
-			if m.state.projects.status == "filtering" {
-			}
 		}
 	}
 
@@ -54,22 +50,39 @@ func (m model) projectsUpdate(msg tea.Msg) (model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) NewProjectsState() ProjectsState {
-	const PROJECT_COLUMN_NAME = "Project"
-	const REPOSITORIES_COUNT_COLUMN_NAME = "Repositores count"
-
+func NewEmptyProjectsState() ProjectsState {
 	columns := []table.Column{
-		{Title: PROJECT_COLUMN_NAME, Width: 40},
-		{Title: REPOSITORIES_COUNT_COLUMN_NAME, Width: len(REPOSITORIES_COUNT_COLUMN_NAME)},
+		{Title: "Project", Width: 40},
+		{Title: "Repositories count", Width: 18},
 	}
 
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows([]table.Row{{"No data available", ""}}),
+		table.WithFocused(true),
+		table.WithHeight(21),
+	)
+
+	t.SetStyles(GetTableDefaultStyles())
+
+	state := ProjectsState{
+		table: t,
+		data:  []Project{},
+	}
+
+	return state
+}
+
+func (m model) NewProjectsState() ProjectsState {
 	harborClient, err := harbor.NewHarborApiClient(http.DefaultClient)
 	if err != nil {
-		fmt.Printf("Error creating harbor client: %v\n", err)
+		slog.Error("Error creating harbor client", "err", err)
+		return NewEmptyProjectsState()
 	}
 	r, err := harborClient.FetchProjects()
 	if err != nil {
-		fmt.Printf("Error fetching projects: %v\n", err)
+		slog.Error("Error fetching projects", "err", err)
+		return NewEmptyProjectsState()
 	}
 
 	projects := make([]Project, len(*r))
@@ -83,7 +96,12 @@ func (m model) NewProjectsState() ProjectsState {
 
 	rows := make([]table.Row, len(*r))
 	for i, a := range projects {
-		rows[i] = a.ToColumn()
+		rows[i] = a.ToRow()
+	}
+
+	columns := []table.Column{
+		{Title: "Project", Width: 40},
+		{Title: "Repositories count", Width: 18},
 	}
 
 	t := table.New(
@@ -96,9 +114,8 @@ func (m model) NewProjectsState() ProjectsState {
 	t.SetStyles(GetTableDefaultStyles())
 
 	state := ProjectsState{
-		table:  t,
-		data:   projects,
-		status: "",
+		table: t,
+		data:  projects,
 	}
 
 	slog.Debug("New Project state created.")

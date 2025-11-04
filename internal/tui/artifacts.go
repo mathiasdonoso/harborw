@@ -175,7 +175,7 @@ func (m model) artifactsUpdate(msg tea.Msg) (model, tea.Cmd) {
 			return m, nil
 		}
 
-		fmt.Printf(fmt.Sprintf("Deleted artifact with hash: %s\n", msg.artifact.Hash))
+		fmt.Printf("Deleted artifact with hash: %s\n", msg.artifact.Hash)
 	case processDeleteArtifactMsg:
 		if msg.canDelete {
 			fmt.Println("processDoneMsg!!!")

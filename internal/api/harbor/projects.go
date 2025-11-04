@@ -72,7 +72,7 @@ func (h harborApiClient) FetchProjects() (*[]ProjectsResult, error) {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	slog.Debug("Projects fetched", fmt.Sprintf("%+v", projectsResp))
+	slog.Debug("Projects fetched", "data", fmt.Sprintf("%+v", projectsResp))
 
 	return &projectsResp, nil
 }

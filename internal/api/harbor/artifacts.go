@@ -123,7 +123,7 @@ func (h harborApiClient) FetchArtifacts(project string, repository string) (*[]A
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	slog.Debug("Artifacts fetched", fmt.Sprintf("%+v", artifactsResp))
+	slog.Debug("Artifacts fetched", "data", fmt.Sprintf("%+v", artifactsResp))
 
 	return &artifactsResp, nil
 }

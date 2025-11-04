@@ -62,7 +62,7 @@ var REPOSITORIES_COLUMNS = []table.Column{
 	{Title: "Artifacts count", Width: 15},
 }
 
-func NewEmptyRepositoriesState() RepositoriesState {
+func newEmptyRepositoriesState() RepositoriesState {
 	t := table.New(
 		table.WithColumns(REPOSITORIES_COLUMNS),
 		table.WithRows([]table.Row{{"No data available", ""}}),
@@ -84,13 +84,13 @@ func (m model) NewRepositoriesState(project string) RepositoriesState {
 	harborClient, err := harbor.NewHarborApiClient(http.DefaultClient)
 	if err != nil {
 		slog.Error("Error creating harbor client", "err", err)
-		return NewEmptyRepositoriesState()
+		return newEmptyRepositoriesState()
 	}
 
 	r, err := harborClient.FetchRepositories(project)
 	if err != nil {
 		slog.Error("Error fetching projects", "err", err)
-		return NewEmptyRepositoriesState()
+		return newEmptyRepositoriesState()
 	}
 
 	repositories := make([]Repository, len(*r))

@@ -55,7 +55,7 @@ var PROJECTS_COLUMNS = []table.Column{
 	{Title: "Repositories count", Width: 18},
 }
 
-func NewEmptyProjectsState() ProjectsState {
+func newEmptyProjectsState() ProjectsState {
 	t := table.New(
 		table.WithColumns(PROJECTS_COLUMNS),
 		table.WithRows([]table.Row{{"No data available", ""}}),
@@ -77,12 +77,12 @@ func (m model) NewProjectsState() ProjectsState {
 	harborClient, err := harbor.NewHarborApiClient(http.DefaultClient)
 	if err != nil {
 		slog.Error("Error creating harbor client", "err", err)
-		return NewEmptyProjectsState()
+		return newEmptyProjectsState()
 	}
 	r, err := harborClient.FetchProjects()
 	if err != nil {
 		slog.Error("Error fetching projects", "err", err)
-		return NewEmptyProjectsState()
+		return newEmptyProjectsState()
 	}
 
 	projects := make([]Project, len(*r))

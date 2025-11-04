@@ -239,7 +239,7 @@ var ARTIFACTS_COLUMNS = []table.Column{
 	{Title: "Push time", Width: 25},
 }
 
-func NewEmptyArtifactsState() ArtifactsState {
+func newEmptyArtifactsState() ArtifactsState {
 	t := table.New(
 		table.WithColumns(ARTIFACTS_COLUMNS),
 		table.WithRows([]table.Row{{"", "No data available", "", "", "", "", ""}}),
@@ -261,13 +261,13 @@ func (m model) NewArtifactsState(project string, repository string) ArtifactsSta
 	harborClient, err := harbor.NewHarborApiClient(http.DefaultClient)
 	if err != nil {
 		slog.Error("Error creating harbor client", "err", err)
-		return NewEmptyArtifactsState()
+		return newEmptyArtifactsState()
 	}
 
 	a, err := harborClient.FetchArtifacts(project, repository)
 	if err != nil {
 		slog.Error("Error fetching projects", "err", err)
-		return NewEmptyArtifactsState()
+		return newEmptyArtifactsState()
 	}
 
 	artifacts := make([]Artifact, len(*a))
